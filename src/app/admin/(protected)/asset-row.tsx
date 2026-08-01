@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { deleteAsset, linkConsent, updateAssetStatus } from "./actions";
 import type { Asset, AssetStatus, ConsentRecord } from "@/lib/types";
 
@@ -17,38 +17,79 @@ export default function AssetRow({
   requiresConsent,
   consentRecords,
   publicUrl,
+  selected,
+  onToggleSelect,
+  externalError,
+  notify,
 }: {
   asset: Asset;
   requiresConsent: boolean;
   consentRecords: ConsentRecord[];
   publicUrl: string | null;
+  selected: boolean;
+  onToggleSelect: () => void;
+  externalError?: string;
+  notify: (type: "success" | "error", text: string) => void;
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  useEffect(() => {
+    setError(externalError ?? null);
+  }, [externalError]);
 
   function handleStatusChange(status: AssetStatus) {
     setError(null);
     startTransition(async () => {
       const result = await updateAssetStatus(asset.id, status);
-      if (result?.error) setError(result.error);
+      if (result?.error) {
+        setError(result.error);
+        notify("error", `Failed to update "${asset.title}": ${result.error}`);
+      } else {
+        notify("success", `"${asset.title}" set to ${status.replace("_", " ")}.`);
+      }
     });
   }
 
   function handleConsentChange(consentId: string) {
     startTransition(async () => {
-      await linkConsent(asset.id, consentId);
+      const result = await linkConsent(asset.id, consentId);
+      if (result?.error) {
+        notify("error", `Failed to link consent for "${asset.title}": ${result.error}`);
+      } else {
+        notify("success", `Consent updated for "${asset.title}".`);
+      }
     });
   }
 
-  function handleDelete() {
-    if (!confirm(`Delete "${asset.title}"? This cannot be undone.`)) return;
+  function handleDeleteClick() {
+    if (!confirmingDelete) {
+      setConfirmingDelete(true);
+      return;
+    }
+    setConfirmingDelete(false);
     startTransition(async () => {
-      await deleteAsset(asset.id, asset.storage_path);
+      const result = await deleteAsset(asset.id, asset.storage_path);
+      if (result?.error) {
+        notify("error", `Failed to delete "${asset.title}": ${result.error}`);
+      } else {
+        notify("success", `"${asset.title}" deleted.`);
+      }
     });
   }
 
   return (
     <tr className="border-b border-black/5 align-top">
+      <td className="py-3 pr-2">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          disabled={asset.status === "published"}
+          aria-label={`Select ${asset.title}`}
+        />
+      </td>
       <td className="py-3 pr-4">
         <div className="font-medium text-brand-black">{asset.title}</div>
         {asset.credit && <div className="text-xs text-black/50">Credit: {asset.credit}</div>}
@@ -88,7 +129,7 @@ export default function AssetRow({
         )}
       </td>
       <td className="py-3">
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           {(["draft", "pending_consent", "cleared", "published", "rejected"] as AssetStatus[]).map(
             (s) => (
               <button
@@ -101,13 +142,33 @@ export default function AssetRow({
               </button>
             )
           )}
-          <button
-            disabled={isPending}
-            onClick={handleDelete}
-            className="rounded border border-brand-red/30 px-2 py-1 text-xs text-brand-red hover:bg-brand-red/5"
-          >
-            Delete
-          </button>
+          {!confirmingDelete ? (
+            <button
+              disabled={isPending}
+              onClick={handleDeleteClick}
+              className="rounded border border-brand-red/30 px-2 py-1 text-xs text-brand-red hover:bg-brand-red/5"
+            >
+              Delete
+            </button>
+          ) : (
+            <span className="flex items-center gap-1">
+              <span className="text-xs text-brand-red">Delete?</span>
+              <button
+                disabled={isPending}
+                onClick={handleDeleteClick}
+                className="rounded bg-brand-red px-2 py-1 text-xs font-medium text-white hover:opacity-90"
+              >
+                Confirm
+              </button>
+              <button
+                disabled={isPending}
+                onClick={() => setConfirmingDelete(false)}
+                className="rounded border border-black/15 px-2 py-1 text-xs hover:border-black/30"
+              >
+                Cancel
+              </button>
+            </span>
+          )}
         </div>
       </td>
     </tr>

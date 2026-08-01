@@ -24,7 +24,18 @@ export default async function HomePage() {
   const typedCategories = (categories ?? []) as Category[];
   const typedAssets = (assets ?? []) as Asset[];
 
-  const paths = typedAssets.flatMap((a) => [a.storage_path, a.thumbnail_path].filter((p): p is string => !!p));
+  // Only pre-sign what the grid actually needs to render previews: thumbnails,
+  // and the file itself for images (there's no separate image-thumbnail pipeline
+  // yet). PDFs/videos/docs are NOT pre-signed here — their full file URL is only
+  // fetched on demand (getPublishedAssetUrl) when a visitor opens the viewer for
+  // that specific item, so a single page load can't be used to bulk-harvest every
+  // published file's URL at once.
+  const paths = typedAssets.flatMap((a) => {
+    const p: string[] = [];
+    if (a.thumbnail_path) p.push(a.thumbnail_path);
+    if (a.file_type?.startsWith("image/")) p.push(a.storage_path);
+    return p;
+  });
   let signedUrlMap = new Map<string, string>();
   if (paths.length > 0) {
     const { data: signedUrls } = await supabase.storage.from("h4gt-assets").createSignedUrls(paths, 3600);
@@ -43,7 +54,7 @@ export default async function HomePage() {
     tags: a.tags,
     file_type: a.file_type,
     category_id: a.category_id,
-    url: signedUrlMap.get(a.storage_path) ?? null,
+    url: a.file_type?.startsWith("image/") ? signedUrlMap.get(a.storage_path) ?? null : null,
     thumbnailUrl: a.thumbnail_path ? signedUrlMap.get(a.thumbnail_path) ?? null : null,
   }));
 
@@ -101,10 +112,11 @@ export default async function HomePage() {
           <div>
             <h3 className="mb-2 font-display text-base text-brand-black">Terms of use</h3>
             <p className="leading-relaxed text-brand-muted">
-              Materials in this library are shared by Amref Health Africa in Uganda for learning,
-              replication, media, and advocacy purposes related to gender transformative work.
-              Please credit Amref Health Africa and, where given, the named photographer or author
-              when reusing any material.
+              Materials in this library are © Amref Health Africa in Uganda and may be viewed here
+              for learning, reference, and advocacy purposes related to gender transformative work.
+              Downloading, copying, or redistributing files outside this site is not permitted
+              without prior written permission — contact the Amref Uganda Communications Unit to
+              request use of a specific item.
             </p>
           </div>
           <div>
