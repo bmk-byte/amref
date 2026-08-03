@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Asset, Category } from "@/lib/types";
 import PublicBrowser, { type PublicAsset } from "./public-browser";
@@ -65,12 +66,12 @@ export default async function HomePage() {
       <header className="sticky top-0 z-20 border-b border-brand-line bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src="/heroes-logo.png"
               alt="Heroes for Gender Transformative Action"
               width={660}
               height={640}
+              priority
               className="h-9 w-auto shrink-0"
             />
             <span className="hidden text-sm font-semibold text-brand-black sm:inline">

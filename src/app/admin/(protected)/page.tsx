@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Asset, Category, ConsentRecord } from "@/lib/types";
-import UploadForm from "./upload-form";
 import AdminBoard from "./admin-board";
 
 export default async function AdminDashboard() {
@@ -31,8 +30,6 @@ export default async function AdminDashboard() {
   return (
     <div>
       <h1 className="mb-6 text-xl font-semibold text-brand-black">Assets</h1>
-
-      <UploadForm categories={typedCategories} />
 
       <AdminBoard
         categories={typedCategories}

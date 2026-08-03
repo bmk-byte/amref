@@ -77,7 +77,10 @@ export async function uploadAsset(formData: FormData) {
   const { error: uploadError } = await supabase.storage.from("h4gt-assets").upload(path, file, {
     contentType: file.type || undefined,
   });
-  if (uploadError) return { error: uploadError.message };
+  if (uploadError) {
+    console.error(uploadError);
+    return { error: uploadError.message };
+  }
 
   let thumbnailPath: string | null = null;
   if (file.type === "application/pdf") {
@@ -108,7 +111,10 @@ export async function uploadAsset(formData: FormData) {
     uploaded_by: user.id,
   });
 
-  if (insertError) return { error: insertError.message };
+  if (insertError) {
+    console.error(insertError);
+    return { error: insertError.message };
+  }
 
   revalidatePath("/admin");
   return { success: true };
@@ -122,7 +128,10 @@ export async function updateAssetStatus(assetId: string, status: AssetStatus) {
   }
 
   const { error } = await supabase.from("assets").update({ status }).eq("id", assetId);
-  if (error) return { error: error.message };
+  if (error) {
+    console.error(error);
+    return { error: error.message };
+  }
 
   revalidatePath("/admin");
   return { success: true };
@@ -151,7 +160,10 @@ export async function publishAsset(assetId: string) {
   }
 
   const { error } = await supabase.from("assets").update({ status: "published" }).eq("id", assetId);
-  if (error) return { error: error.message };
+  if (error) {
+    console.error(error);
+    return { error: error.message };
+  }
 
   revalidatePath("/admin");
   revalidatePath("/");
@@ -164,7 +176,10 @@ export async function linkConsent(assetId: string, consentId: string) {
     .from("assets")
     .update({ consent_id: consentId || null })
     .eq("id", assetId);
-  if (error) return { error: error.message };
+  if (error) {
+    console.error(error);
+    return { error: error.message };
+  }
 
   revalidatePath("/admin");
   return { success: true };
@@ -174,7 +189,10 @@ export async function deleteAsset(assetId: string, storagePath: string) {
   const supabase = await createClient();
   await supabase.storage.from("h4gt-assets").remove([storagePath]);
   const { error } = await supabase.from("assets").delete().eq("id", assetId);
-  if (error) return { error: error.message };
+  if (error) {
+    console.error(error);
+    return { error: error.message };
+  }
 
   revalidatePath("/admin");
   revalidatePath("/");
@@ -201,7 +219,10 @@ export async function createConsentRecord(formData: FormData) {
     const { error: uploadError } = await supabase.storage
       .from("h4gt-consent-forms")
       .upload(path, file, { contentType: file.type || undefined });
-    if (uploadError) return { error: uploadError.message };
+    if (uploadError) {
+      console.error(uploadError);
+      return { error: uploadError.message };
+    }
     consentFormPath = path;
   }
 
@@ -212,7 +233,10 @@ export async function createConsentRecord(formData: FormData) {
     consent_form_path: consentFormPath,
     created_by: user.id,
   });
-  if (error) return { error: error.message };
+  if (error) {
+    console.error(error);
+    return { error: error.message };
+  }
 
   revalidatePath("/admin/consent");
   return { success: true };

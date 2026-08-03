@@ -1,21 +1,26 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useTransition } from "react";
 import { uploadAsset } from "./actions";
 import type { Category } from "@/lib/types";
 
-export default function UploadForm({ categories }: { categories: Category[] }) {
+export default function UploadForm({
+  categories,
+  notify,
+}: {
+  categories: Category[];
+  notify: (type: "success" | "error", text: string) => void;
+}) {
   const formRef = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
-  const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
 
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
       const result = await uploadAsset(formData);
       if (result?.error) {
-        setMessage({ type: "error", text: result.error });
+        notify("error", result.error);
       } else {
-        setMessage({ type: "success", text: "Uploaded." });
+        notify("success", "Uploaded.");
         formRef.current?.reset();
       }
     });
@@ -28,18 +33,6 @@ export default function UploadForm({ categories }: { categories: Category[] }) {
       className="mb-8 grid gap-3 rounded-lg border border-black/10 bg-white p-5 sm:grid-cols-2"
     >
       <h2 className="col-span-full text-sm font-semibold text-brand-black">Upload a new asset</h2>
-
-      {message && (
-        <p
-          className={`col-span-full rounded px-3 py-2 text-sm ${
-            message.type === "error"
-              ? "border border-brand-orange/30 bg-brand-orange/5 text-brand-orange"
-              : "border border-green-300 bg-green-50 text-green-700"
-          }`}
-        >
-          {message.text}
-        </p>
-      )}
 
       <label className="text-sm">
         <span className="mb-1 block text-black/70">File</span>

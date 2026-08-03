@@ -21,6 +21,9 @@ export async function getPublishedAssetUrl(assetId: string): Promise<{ url: stri
     .from("h4gt-assets")
     .createSignedUrl(asset.storage_path, 300);
 
-  if (error || !data?.signedUrl) return { error: "Could not generate a link for this file." };
+  if (error || !data?.signedUrl) {
+    if (error) console.error(error);
+    return { error: "Could not generate a link for this file." };
+  }
   return { url: data.signedUrl };
 }

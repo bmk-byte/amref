@@ -12,10 +12,29 @@ const inter = Inter({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+const TITLE = "H4GT Resource Library — Amref Health Africa Uganda";
+const DESCRIPTION =
+  "Public resource library for the Heroes For Gender Transformative (H4GT) project: reports, abstracts, human interest stories, photos, IEC materials, and the impact series.";
+
 export const metadata: Metadata = {
-  title: "H4GT Resource Library — Amref Health Africa Uganda",
-  description:
-    "Public resource library for the Heroes For Gender Transformative (H4GT) project: reports, abstracts, human interest stories, photos, IEC materials, and the impact series.",
+  metadataBase: new URL("https://h4gt-resource-library.vercel.app"),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/",
+    siteName: "H4GT Resource Library",
+    images: [{ url: "/heroes-logo.png", width: 660, height: 640 }],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/heroes-logo.png"],
+  },
 };
 
 export default function RootLayout({

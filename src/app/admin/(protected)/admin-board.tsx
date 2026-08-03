@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { CATEGORIES_REQUIRING_CONSENT, type Asset, type Category, type ConsentRecord } from "@/lib/types";
 import AssetRow from "./asset-row";
+import UploadForm from "./upload-form";
 import { publishAsset } from "./actions";
 import { ToastStack, type ToastMessage } from "./toast";
 
@@ -35,6 +36,8 @@ export default function AdminBoard({
   return (
     <div>
       <ToastStack toasts={toasts} onDismiss={dismiss} />
+
+      <UploadForm categories={categories} notify={notify} />
 
       {categories.map((category) => {
         const categoryAssets = assets.filter((a) => a.category_id === category.id);

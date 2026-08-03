@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { Category } from "@/lib/types";
 import { getPublishedAssetUrl } from "./actions";
 
@@ -300,11 +300,12 @@ export default function PublicBrowser({
   assets: PublicAsset[];
 }) {
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [activeCategory, setActiveCategory] = useState<string | "all">("all");
   const [openAsset, setOpenAsset] = useState<PublicAsset | null>(null);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = deferredQuery.trim().toLowerCase();
     return assets.filter((a) => {
       if (activeCategory !== "all" && a.category_id !== activeCategory) return false;
       if (!q) return true;
@@ -314,7 +315,7 @@ export default function PublicBrowser({
         a.tags.some((t) => t.toLowerCase().includes(q))
       );
     });
-  }, [assets, query, activeCategory]);
+  }, [assets, deferredQuery, activeCategory]);
 
   return (
     <div>
