@@ -150,7 +150,7 @@ function CategorySection({
             type="button"
             disabled={selected.size === 0 || !!bulkProgress}
             onClick={handleBulkPublish}
-            className="rounded bg-brand-red px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-30"
+            className="rounded bg-brand-orange px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 disabled:opacity-30"
           >
             Publish selected
           </button>

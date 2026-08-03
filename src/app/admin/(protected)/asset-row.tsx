@@ -9,7 +9,7 @@ const STATUS_STYLES: Record<AssetStatus, string> = {
   pending_consent: "bg-amber-100 text-amber-700",
   cleared: "bg-blue-100 text-blue-700",
   published: "bg-green-100 text-green-700",
-  rejected: "bg-brand-red/10 text-brand-red",
+  rejected: "bg-brand-orange/10 text-brand-orange",
 };
 
 export default function AssetRow({
@@ -98,7 +98,7 @@ export default function AssetRow({
             href={publicUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-xs text-brand-red hover:underline"
+            className="text-xs text-brand-orange hover:underline"
           >
             View file
           </a>
@@ -108,7 +108,7 @@ export default function AssetRow({
         <span className={`rounded px-2 py-1 text-xs font-medium ${STATUS_STYLES[asset.status]}`}>
           {asset.status.replace("_", " ")}
         </span>
-        {error && <div className="mt-1 max-w-[220px] text-xs text-brand-red">{error}</div>}
+        {error && <div className="mt-1 max-w-[220px] text-xs text-brand-orange">{error}</div>}
       </td>
       <td className="py-3 pr-4">
         {requiresConsent ? (
@@ -136,7 +136,7 @@ export default function AssetRow({
                 key={s}
                 disabled={isPending || asset.status === s}
                 onClick={() => handleStatusChange(s)}
-                className="rounded border border-black/15 px-2 py-1 text-xs hover:border-brand-red hover:text-brand-red disabled:opacity-30"
+                className="rounded border border-black/15 px-2 py-1 text-xs hover:border-brand-orange hover:text-brand-orange disabled:opacity-30"
               >
                 {s === "published" ? "Publish" : s.replace("_", " ")}
               </button>
@@ -146,17 +146,17 @@ export default function AssetRow({
             <button
               disabled={isPending}
               onClick={handleDeleteClick}
-              className="rounded border border-brand-red/30 px-2 py-1 text-xs text-brand-red hover:bg-brand-red/5"
+              className="rounded border border-brand-orange/30 px-2 py-1 text-xs text-brand-orange hover:bg-brand-orange/5"
             >
               Delete
             </button>
           ) : (
             <span className="flex items-center gap-1">
-              <span className="text-xs text-brand-red">Delete?</span>
+              <span className="text-xs text-brand-orange">Delete?</span>
               <button
                 disabled={isPending}
                 onClick={handleDeleteClick}
-                className="rounded bg-brand-red px-2 py-1 text-xs font-medium text-white hover:opacity-90"
+                className="rounded bg-brand-orange px-2 py-1 text-xs font-medium text-white hover:opacity-90"
               >
                 Confirm
               </button>

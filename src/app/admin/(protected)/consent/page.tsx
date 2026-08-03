@@ -55,7 +55,7 @@ export default async function ConsentPage() {
                       href={signedFormUrls.get(c.consent_form_path)}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-brand-red hover:underline"
+                      className="text-brand-orange hover:underline"
                     >
                       View form
                     </a>

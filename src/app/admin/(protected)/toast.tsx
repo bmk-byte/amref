@@ -20,7 +20,7 @@ export function ToastStack({
           className={`flex items-center gap-3 rounded-lg border px-4 py-2 text-sm shadow-lg ${
             t.type === "success"
               ? "border-green-300 bg-green-50 text-green-700"
-              : "border-brand-red/30 bg-brand-red/5 text-brand-red"
+              : "border-brand-orange/30 bg-brand-orange/5 text-brand-orange"
           }`}
         >
           <span>{t.text}</span>

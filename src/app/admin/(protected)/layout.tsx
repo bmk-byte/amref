@@ -19,13 +19,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
           <span className="font-semibold text-brand-black">H4GT Admin</span>
           <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            <Link href="/admin" className="text-black/70 hover:text-brand-red">
+            <Link href="/admin" className="text-black/70 hover:text-brand-orange">
               Assets
             </Link>
-            <Link href="/admin/consent" className="text-black/70 hover:text-brand-red">
+            <Link href="/admin/consent" className="text-black/70 hover:text-brand-orange">
               Consent Records
             </Link>
-            <Link href="/" className="text-black/70 hover:text-brand-red">
+            <Link href="/" className="text-black/70 hover:text-brand-orange">
               View public site
             </Link>
           </nav>

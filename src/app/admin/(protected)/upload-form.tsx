@@ -33,7 +33,7 @@ export default function UploadForm({ categories }: { categories: Category[] }) {
         <p
           className={`col-span-full rounded px-3 py-2 text-sm ${
             message.type === "error"
-              ? "border border-brand-red/30 bg-brand-red/5 text-brand-red"
+              ? "border border-brand-orange/30 bg-brand-orange/5 text-brand-orange"
               : "border border-green-300 bg-green-50 text-green-700"
           }`}
         >
@@ -94,7 +94,7 @@ export default function UploadForm({ categories }: { categories: Category[] }) {
       <button
         type="submit"
         disabled={isPending}
-        className="col-span-full w-fit rounded bg-brand-red px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+        className="col-span-full w-fit rounded bg-brand-orange px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
       >
         {isPending ? "Uploading…" : "Upload"}
       </button>

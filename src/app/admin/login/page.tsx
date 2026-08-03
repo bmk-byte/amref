@@ -36,7 +36,7 @@ export default function LoginPage() {
         <p className="mb-6 text-sm text-black/60">Staff sign in</p>
 
         {error && (
-          <p className="mb-4 rounded border border-brand-red/30 bg-brand-red/5 px-3 py-2 text-sm text-brand-red">
+          <p className="mb-4 rounded border border-brand-orange/30 bg-brand-orange/5 px-3 py-2 text-sm text-brand-orange">
             {error}
           </p>
         )}
@@ -48,7 +48,7 @@ export default function LoginPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded border border-black/15 px-3 py-2 outline-none focus:border-brand-red"
+            className="w-full rounded border border-black/15 px-3 py-2 outline-none focus:border-brand-orange"
           />
         </label>
 
@@ -59,14 +59,14 @@ export default function LoginPage() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded border border-black/15 px-3 py-2 outline-none focus:border-brand-red"
+            className="w-full rounded border border-black/15 px-3 py-2 outline-none focus:border-brand-orange"
           />
         </label>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded bg-brand-red px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+          className="w-full rounded bg-brand-orange px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
         >
           {loading ? "Signing in…" : "Sign in"}
         </button>

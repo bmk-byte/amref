@@ -65,7 +65,7 @@ function AssetCard({ asset, onOpen }: { asset: PublicAsset; onOpen: () => void }
       type="button"
       onClick={onOpen}
       onContextMenu={(e) => e.preventDefault()}
-      className="group block w-full overflow-hidden rounded-xl border border-brand-line bg-white text-left transition duration-200 hover:-translate-y-0.5 hover:border-brand-red/40 hover:shadow-[0_12px_32px_-16px_rgba(24,20,15,0.25)]"
+      className="group block w-full overflow-hidden rounded-xl border border-brand-line bg-white text-left transition duration-200 hover:-translate-y-0.5 hover:border-brand-orange/40 hover:shadow-[0_12px_32px_-16px_rgba(24,20,15,0.25)]"
     >
       <div className="relative flex aspect-[4/3] select-none items-center justify-center overflow-hidden bg-brand-gray">
         {kind === "image" && asset.url ? (
@@ -107,7 +107,7 @@ function AssetCard({ asset, onOpen }: { asset: PublicAsset; onOpen: () => void }
         )}
       </div>
       <div className="p-4">
-        <h3 className="mb-1 text-sm font-semibold text-brand-black group-hover:text-brand-red">
+        <h3 className="mb-1 text-sm font-semibold text-brand-black group-hover:text-brand-orange">
           {asset.title}
         </h3>
         {asset.description && (
@@ -179,7 +179,7 @@ function AssetViewer({ asset, onClose }: { asset: PublicAsset; onClose: () => vo
           <button
             onClick={onClose}
             aria-label="Close"
-            className="shrink-0 text-brand-muted hover:text-brand-red"
+            className="shrink-0 text-brand-muted hover:text-brand-orange"
           >
             ✕
           </button>
@@ -272,7 +272,7 @@ function CategorySection({
   return (
     <section id={category.slug} className="mb-14 scroll-mt-36">
       <div className="mb-5 flex items-baseline justify-between border-b border-brand-line pb-3">
-        <h2 className="font-display text-xl text-brand-black">{category.name}</h2>
+        <h2 className="font-display text-xl font-semibold text-brand-black">{category.name}</h2>
         <span className="text-xs text-brand-muted">{assets.length}</span>
       </div>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -283,7 +283,7 @@ function CategorySection({
       {capped && assets.length > PAGE_SIZE && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="mt-5 rounded-full border border-brand-line px-4 py-1.5 text-xs font-medium text-brand-muted transition-all hover:border-brand-red hover:text-brand-red active:scale-95"
+          className="mt-5 rounded-full border border-brand-line px-4 py-1.5 text-xs font-medium text-brand-muted transition-all hover:border-brand-orange hover:text-brand-orange active:scale-95"
         >
           {expanded ? "Show fewer" : `Show all ${assets.length}`}
         </button>
@@ -329,7 +329,7 @@ export default function PublicBrowser({
               placeholder="Search titles, descriptions, tags…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full rounded-full border border-brand-line bg-white py-2 pl-9 pr-4 text-sm outline-none transition focus:border-brand-red"
+              className="w-full rounded-full border border-brand-line bg-white py-2 pl-9 pr-4 text-sm outline-none transition focus:border-brand-orange"
             />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -338,8 +338,8 @@ export default function PublicBrowser({
               aria-pressed={activeCategory === "all"}
               className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-90 ${
                 activeCategory === "all"
-                  ? "border-brand-red bg-brand-red text-white shadow-sm shadow-brand-red/30"
-                  : "border-brand-line text-brand-muted hover:border-brand-red hover:text-brand-red"
+                  ? "border-brand-orange bg-brand-orange text-white shadow-sm shadow-brand-orange/30"
+                  : "border-brand-line text-brand-muted hover:border-brand-orange hover:text-brand-orange"
               }`}
             >
               All
@@ -351,8 +351,8 @@ export default function PublicBrowser({
                 aria-pressed={activeCategory === c.id}
                 className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-90 ${
                   activeCategory === c.id
-                    ? "border-brand-red bg-brand-red text-white shadow-sm shadow-brand-red/30"
-                    : "border-brand-line text-brand-muted hover:border-brand-red hover:text-brand-red"
+                    ? "border-brand-orange bg-brand-orange text-white shadow-sm shadow-brand-orange/30"
+                    : "border-brand-line text-brand-muted hover:border-brand-orange hover:text-brand-orange"
                 }`}
               >
                 {c.name}

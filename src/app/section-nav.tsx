@@ -35,8 +35,8 @@ export default function SectionNav({ categories }: { categories: Category[] }) {
           onClick={() => setActive(c.slug)}
           className={`rounded-full px-3 py-1.5 transition-all active:scale-95 ${
             active === c.slug
-              ? "bg-brand-red/10 font-medium text-brand-red"
-              : "text-brand-muted hover:text-brand-red"
+              ? "bg-brand-orange/10 font-medium text-brand-orange"
+              : "text-brand-muted hover:text-brand-orange"
           }`}
         >
           {c.name}

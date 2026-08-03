@@ -65,16 +65,25 @@ export default async function HomePage() {
       <header className="sticky top-0 z-20 border-b border-brand-line bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/heroes-logo.png"
+              alt="Heroes for Gender Transformative Action"
+              width={660}
+              height={640}
+              className="h-9 w-auto shrink-0"
+            />
+            <span className="hidden text-sm font-semibold text-brand-black sm:inline">
+              H4GT Resource Library
+            </span>
+            <span className="hidden h-6 w-px bg-brand-line sm:inline-block" aria-hidden="true" />
             <img
               src="https://i0.wp.com/amref.org/uganda/wp-content/uploads/sites/4/2020/03/white.png?fit=1460%2C862&ssl=1"
               alt="Amref Health Africa"
               width={1460}
               height={862}
-              className="h-8 w-auto shrink-0 aspect-[1460/862]"
+              className="h-5 w-auto shrink-0 aspect-[1460/862] opacity-80"
             />
-            <span className="hidden text-sm font-medium text-brand-muted sm:inline">
-              H4GT Resource Library
-            </span>
           </div>
           {typedCategories.length > 0 && <SectionNav categories={typedCategories} />}
         </div>
@@ -82,13 +91,16 @@ export default async function HomePage() {
 
       <section className="border-b border-brand-line bg-gradient-to-b from-brand-gray/70 to-background">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20">
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-brand-red">
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-brand-orange">
             Amref Health Africa — Uganda
           </p>
-          <h1 className="max-w-3xl font-display text-4xl leading-[1.1] font-medium text-brand-black sm:text-5xl">
+          <h1 className="max-w-3xl font-display text-4xl leading-[1.1] font-bold text-brand-black sm:text-5xl">
             Heroes For Gender Transformative
             <span className="block text-brand-muted">Resource Library</span>
           </h1>
+          <p className="mt-3 text-sm font-medium text-brand-green">
+            Supporting Community Solutions for Sustainable Health Outcomes
+          </p>
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-brand-muted">
             Reports, abstracts, human interest stories, photos, IEC materials, and the impact series
             from the H4GT project — preserved, credited, and shared publicly so its impact keeps
@@ -110,7 +122,7 @@ export default async function HomePage() {
       <footer className="border-t border-brand-line bg-brand-gray/60">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 text-sm sm:grid-cols-2 sm:px-6">
           <div>
-            <h3 className="mb-2 font-display text-base text-brand-black">Terms of use</h3>
+            <h3 className="mb-2 font-display text-base font-semibold text-brand-black">Terms of use</h3>
             <p className="leading-relaxed text-brand-muted">
               Materials in this library are © Amref Health Africa in Uganda and may be viewed here
               for learning, reference, and advocacy purposes related to gender transformative work.
@@ -120,7 +132,7 @@ export default async function HomePage() {
             </p>
           </div>
           <div>
-            <h3 className="mb-2 font-display text-base text-brand-black">Consent &amp; takedowns</h3>
+            <h3 className="mb-2 font-display text-base font-semibold text-brand-black">Consent &amp; takedowns</h3>
             <p className="leading-relaxed text-brand-muted">
               Photos and personal stories are published only where consent was given by the
               individuals featured. If you believe material should not be public, contact the Amref

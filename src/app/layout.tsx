@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
-import { Fraunces, Poppins } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const poppins = Poppins({
-  variable: "--font-poppins",
+// Brand guidelines specify Helvetica Neue; it isn't available on Google Fonts
+// (commercial Adobe/Linotype font), so Inter is used as the closest free
+// substitute — matched metrics, built for screens, same single-family approach
+// for both headings and body text that the guidelines call for.
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  axes: ["opsz"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -26,10 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${poppins.variable} ${fraunces.variable} h-full scroll-smooth antialiased`}
-    >
+    <html lang="en" className={`${inter.variable} h-full scroll-smooth antialiased`}>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );
