@@ -122,6 +122,35 @@ export async function uploadAsset(formData: FormData) {
 
 const DRIVE_FILE_URL_RE = /^https:\/\/drive\.google\.com\/file\/d\/[a-zA-Z0-9_-]+\/(view|preview)/;
 
+// Hot-linking drive.google.com/thumbnail on every page load makes the grid's
+// load time depend on Google's endpoint. Fetching it once here and storing it
+// in our own bucket puts video thumbnails on the same fast, reliable path as
+// every other asset's thumbnail.
+async function cacheDriveThumbnail(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  sourceUrl: string,
+  categorySlug: string
+): Promise<string | null> {
+  const match = sourceUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (!match) return null;
+  const fileId = match[1];
+
+  try {
+    const res = await fetch(`https://drive.google.com/thumbnail?id=${fileId}&sz=w600`);
+    if (!res.ok) return null;
+    const buffer = Buffer.from(await res.arrayBuffer());
+
+    const thumbPath = `${categorySlug}/thumbnails/${Date.now()}-drive-${fileId}.jpg`;
+    const { error } = await supabase.storage
+      .from("h4gt-assets")
+      .upload(thumbPath, buffer, { contentType: "image/jpeg" });
+    if (error) return null;
+    return thumbPath;
+  } catch {
+    return null;
+  }
+}
+
 export async function addVideoLink(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -158,13 +187,15 @@ export async function addVideoLink(formData: FormData) {
     ? "pending_consent"
     : "draft";
 
+  const thumbnailPath = await cacheDriveThumbnail(supabase, sourceUrl, category.slug);
+
   const { error: insertError } = await supabase.from("assets").insert({
     category_id: categoryId,
     title,
     description,
     storage_path: null,
     source_url: sourceUrl,
-    thumbnail_path: null,
+    thumbnail_path: thumbnailPath,
     file_type: "video/external",
     credit,
     tags,

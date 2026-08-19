@@ -44,6 +44,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full scroll-smooth antialiased`}>
+      <head>
+        {/* Video previews embed Drive's player on demand — warming this connection
+            ahead of the click shaves off DNS/TLS time when the modal opens. */}
+        <link rel="preconnect" href="https://drive.google.com" />
+        <link rel="dns-prefetch" href="https://drive.google.com" />
+      </head>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );

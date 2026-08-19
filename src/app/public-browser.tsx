@@ -145,6 +145,7 @@ function AssetViewer({ asset, onClose }: { asset: PublicAsset; onClose: () => vo
   const [url, setUrl] = useState<string | null>(asset.url);
   const [loading, setLoading] = useState(needsFetch);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [videoFrameLoaded, setVideoFrameLoaded] = useState(false);
 
   useEffect(() => {
     if (!needsFetch) return;
@@ -226,13 +227,21 @@ function AssetViewer({ asset, onClose }: { asset: PublicAsset; onClose: () => vo
           )}
 
           {!loading && !fetchError && url && kind === "embed-video" && (
-            <iframe
-              src={driveEmbedUrl(url)}
-              title={asset.title}
-              className="h-[75vh] w-full"
-              allow="autoplay; fullscreen"
-              allowFullScreen
-            />
+            <div className="relative h-[75vh] w-full">
+              {!videoFrameLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center text-sm text-brand-muted">
+                  Loading preview…
+                </div>
+              )}
+              <iframe
+                src={driveEmbedUrl(url)}
+                title={asset.title}
+                onLoad={() => setVideoFrameLoaded(true)}
+                className={`h-full w-full transition-opacity duration-200 ${videoFrameLoaded ? "opacity-100" : "opacity-0"}`}
+                allow="autoplay; fullscreen"
+                allowFullScreen
+              />
+            </div>
           )}
 
           {!loading && !fetchError && url && kind === "video" && (
