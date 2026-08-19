@@ -18,7 +18,7 @@ export default async function AdminDashboard() {
   const typedAssets = (assets ?? []) as Asset[];
   const typedConsent = (consentRecords ?? []) as ConsentRecord[];
 
-  const paths = typedAssets.map((a) => a.storage_path);
+  const paths = typedAssets.map((a) => a.storage_path).filter((p): p is string => !!p);
   const signedUrlMap: Record<string, string> = {};
   if (paths.length > 0) {
     const { data: signedUrls } = await supabase.storage.from("h4gt-assets").createSignedUrls(paths, 3600);

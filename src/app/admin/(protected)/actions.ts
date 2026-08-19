@@ -120,6 +120,67 @@ export async function uploadAsset(formData: FormData) {
   return { success: true };
 }
 
+const DRIVE_FILE_URL_RE = /^https:\/\/drive\.google\.com\/file\/d\/[a-zA-Z0-9_-]+\/(view|preview)/;
+
+export async function addVideoLink(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  const title = (formData.get("title") as string)?.trim();
+  const categoryId = formData.get("category_id") as string;
+  const description = (formData.get("description") as string)?.trim() || null;
+  const credit = (formData.get("credit") as string)?.trim() || null;
+  const sourceUrl = (formData.get("source_url") as string)?.trim();
+  const tagsRaw = (formData.get("tags") as string) || "";
+  const tags = tagsRaw
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  if (!title) return { error: "A title is required." };
+  if (!categoryId) return { error: "A category is required." };
+  if (!sourceUrl) return { error: "A video link is required." };
+  if (!DRIVE_FILE_URL_RE.test(sourceUrl)) {
+    return { error: "Only Google Drive file links (https://drive.google.com/file/d/…) are supported." };
+  }
+
+  const { data: category } = await supabase
+    .from("categories")
+    .select("slug")
+    .eq("id", categoryId)
+    .single();
+  if (!category) return { error: "Unknown category." };
+
+  const initialStatus: AssetStatus = CATEGORIES_REQUIRING_CONSENT.includes(category.slug)
+    ? "pending_consent"
+    : "draft";
+
+  const { error: insertError } = await supabase.from("assets").insert({
+    category_id: categoryId,
+    title,
+    description,
+    storage_path: null,
+    source_url: sourceUrl,
+    thumbnail_path: null,
+    file_type: "video/external",
+    credit,
+    tags,
+    status: initialStatus,
+    uploaded_by: user.id,
+  });
+
+  if (insertError) {
+    console.error(insertError);
+    return { error: insertError.message };
+  }
+
+  revalidatePath("/admin");
+  return { success: true };
+}
+
 export async function updateAssetStatus(assetId: string, status: AssetStatus) {
   const supabase = await createClient();
 
@@ -185,9 +246,11 @@ export async function linkConsent(assetId: string, consentId: string) {
   return { success: true };
 }
 
-export async function deleteAsset(assetId: string, storagePath: string) {
+export async function deleteAsset(assetId: string, storagePath: string | null) {
   const supabase = await createClient();
-  await supabase.storage.from("h4gt-assets").remove([storagePath]);
+  if (storagePath) {
+    await supabase.storage.from("h4gt-assets").remove([storagePath]);
+  }
   const { error } = await supabase.from("assets").delete().eq("id", assetId);
   if (error) {
     console.error(error);

@@ -24,7 +24,8 @@ export type Asset = {
   category_id: string;
   title: string;
   description: string | null;
-  storage_path: string;
+  storage_path: string | null;
+  source_url: string | null;
   thumbnail_path: string | null;
   file_type: string | null;
   credit: string | null;

@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { CATEGORIES_REQUIRING_CONSENT, type Asset, type Category, type ConsentRecord } from "@/lib/types";
 import AssetRow from "./asset-row";
 import UploadForm from "./upload-form";
+import VideoLinkForm from "./video-link-form";
 import { publishAsset } from "./actions";
 import { ToastStack, type ToastMessage } from "./toast";
 
@@ -38,6 +39,7 @@ export default function AdminBoard({
       <ToastStack toasts={toasts} onDismiss={dismiss} />
 
       <UploadForm categories={categories} notify={notify} />
+      <VideoLinkForm categories={categories} notify={notify} />
 
       {categories.map((category) => {
         const categoryAssets = assets.filter((a) => a.category_id === category.id);
@@ -185,7 +187,9 @@ function CategorySection({
                 asset={asset}
                 requiresConsent={requiresConsent}
                 consentRecords={consentRecords}
-                publicUrl={signedUrlMap[asset.storage_path] ?? null}
+                publicUrl={
+                  asset.storage_path ? signedUrlMap[asset.storage_path] ?? null : asset.source_url
+                }
                 selected={selected.has(asset.id)}
                 onToggleSelect={() => toggleOne(asset.id)}
                 externalError={rowErrors[asset.id]}

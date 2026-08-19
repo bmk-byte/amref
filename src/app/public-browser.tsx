@@ -16,8 +16,9 @@ export type PublicAsset = {
   thumbnailUrl: string | null;
 };
 
-function fileKind(fileType: string | null): "image" | "video" | "pdf" | "doc" | "file" {
+function fileKind(fileType: string | null): "image" | "video" | "embed-video" | "pdf" | "doc" | "file" {
   if (!fileType) return "file";
+  if (fileType === "video/external") return "embed-video";
   if (fileType.startsWith("image/")) return "image";
   if (fileType.startsWith("video/")) return "video";
   if (fileType.includes("pdf")) return "pdf";
@@ -25,11 +26,18 @@ function fileKind(fileType: string | null): "image" | "video" | "pdf" | "doc" | 
   return "file";
 }
 
+// Google Drive's share URL (…/file/d/ID/view) isn't embeddable directly —
+// only its /preview variant renders inside an iframe.
+function driveEmbedUrl(url: string): string {
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return match ? `https://drive.google.com/file/d/${match[1]}/preview` : url;
+}
+
 function fileLabel(fileType: string | null): string {
   const kind = fileKind(fileType);
   if (kind === "pdf") return "PDF";
   if (kind === "doc") return "DOC";
-  if (kind === "video") return "VIDEO";
+  if (kind === "video" || kind === "embed-video") return "VIDEO";
   if (kind === "image") return "";
   return (fileType?.split("/")[1] ?? "FILE").toUpperCase().slice(0, 5);
 }
@@ -132,7 +140,7 @@ function AssetCard({ asset, onOpen }: { asset: PublicAsset; onOpen: () => void }
 
 function AssetViewer({ asset, onClose }: { asset: PublicAsset; onClose: () => void }) {
   const kind = fileKind(asset.file_type);
-  const needsFetch = kind !== "image";
+  const needsFetch = kind !== "image" && kind !== "embed-video";
 
   const [url, setUrl] = useState<string | null>(asset.url);
   const [loading, setLoading] = useState(needsFetch);
@@ -214,6 +222,16 @@ function AssetViewer({ asset, onClose }: { asset: PublicAsset; onClose: () => vo
               src={`${url}#toolbar=0&navpanes=0`}
               title={asset.title}
               className="h-[75vh] w-full"
+            />
+          )}
+
+          {!loading && !fetchError && url && kind === "embed-video" && (
+            <iframe
+              src={driveEmbedUrl(url)}
+              title={asset.title}
+              className="h-[75vh] w-full"
+              allow="autoplay; fullscreen"
+              allowFullScreen
             />
           )}
 

@@ -10,12 +10,14 @@ export async function getPublishedAssetUrl(assetId: string): Promise<{ url: stri
 
   const { data: asset } = await supabase
     .from("assets")
-    .select("storage_path")
+    .select("storage_path, source_url")
     .eq("id", assetId)
     .eq("status", "published")
     .single();
 
   if (!asset) return { error: "Not found." };
+  if (asset.source_url) return { url: asset.source_url };
+  if (!asset.storage_path) return { error: "File not available." };
 
   const { data, error } = await supabase.storage
     .from("h4gt-assets")
