@@ -7,7 +7,7 @@ const csp = [
   "img-src 'self' data: https://*.supabase.co https://i0.wp.com https://amref.org https://drive.google.com",
   "connect-src 'self' https://*.supabase.co",
   "font-src 'self' data:",
-  "frame-src https://drive.google.com",
+  "frame-src https://*.supabase.co https://drive.google.com",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
