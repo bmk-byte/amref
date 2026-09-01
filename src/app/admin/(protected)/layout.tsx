@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AdminNav from "./admin-nav";
 import SignOutButton from "./sign-out-button";
+import ThemeToggle from "../../theme-toggle";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -22,6 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
         <div className="flex items-center justify-between gap-4 text-sm text-black/60 sm:justify-end">
           <span className="truncate">{user.email}</span>
+          <ThemeToggle />
           <SignOutButton />
         </div>
       </header>

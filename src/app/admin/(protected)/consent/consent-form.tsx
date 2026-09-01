@@ -33,7 +33,7 @@ export default function ConsentForm() {
           className={`col-span-full rounded px-3 py-2 text-sm ${
             message.type === "error"
               ? "border border-brand-orange/30 bg-brand-orange/5 text-brand-orange"
-              : "border border-green-300 bg-green-50 text-green-700"
+              : "border border-green-300 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/60 dark:text-green-400"
           }`}
         >
           {message.text}

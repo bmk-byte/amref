@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "./actions";
+import ThemeToggle from "../../theme-toggle";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,7 +27,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-gray px-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-brand-gray px-4">
+      <ThemeToggle className="absolute right-4 top-4" />
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-lg border border-black/10 bg-white p-8 shadow-sm"

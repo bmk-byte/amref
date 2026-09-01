@@ -43,8 +43,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full scroll-smooth antialiased`}>
+    <html
+      lang="en"
+      className={`${inter.variable} h-full scroll-smooth antialiased`}
+      suppressHydrationWarning
+    >
       <head>
+        {/* Applies the saved/system theme before first paint so there's no
+            flash of the wrong theme. Runs before hydration, so the <html>
+            className it sets can differ from the server-rendered markup —
+            that's why suppressHydrationWarning is set above. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme");var dark=t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(dark){document.documentElement.classList.add("dark")}}catch(e){}})();`,
+          }}
+        />
         {/* Video previews embed Drive's player on demand — warming this connection
             ahead of the click shaves off DNS/TLS time when the modal opens. */}
         <link rel="preconnect" href="https://drive.google.com" />

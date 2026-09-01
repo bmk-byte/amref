@@ -19,7 +19,7 @@ export function ToastStack({
           role="status"
           className={`flex items-center gap-3 rounded-lg border px-4 py-2 text-sm shadow-lg ${
             t.type === "success"
-              ? "border-green-300 bg-green-50 text-green-700"
+              ? "border-green-300 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/60 dark:text-green-400"
               : "border-brand-orange/30 bg-brand-orange/5 text-brand-orange"
           }`}
         >

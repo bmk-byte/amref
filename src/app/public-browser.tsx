@@ -98,7 +98,7 @@ function AssetCard({ asset, onOpen }: { asset: PublicAsset; onOpen: () => void }
               className="h-full w-full object-cover object-top transition duration-300 group-hover:scale-105"
             />
             {fileLabel(asset.file_type) && (
-              <span className="absolute right-2 top-2 rounded bg-brand-black/70 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-white">
+              <span className="absolute right-2 top-2 rounded bg-neutral-950/70 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-white">
                 {fileLabel(asset.file_type)}
               </span>
             )}
@@ -175,7 +175,7 @@ function AssetViewer({ asset, onClose }: { asset: PublicAsset; onClose: () => vo
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/80 p-4"
       onClick={onClose}
       onContextMenu={(e) => e.preventDefault()}
     >

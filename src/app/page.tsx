@@ -3,6 +3,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 import type { Asset, Category } from "@/lib/types";
 import PublicBrowser, { type PublicAsset } from "./public-browser";
 import SectionNav from "./section-nav";
+import ThemeToggle from "./theme-toggle";
 
 // Time-based safety net only — actions.ts already calls revalidatePath("/")
 // on publish/unpublish/delete, so real changes show up immediately via
@@ -115,7 +116,10 @@ export default async function HomePage() {
               className="h-5 w-auto shrink-0 aspect-[1460/862] opacity-80"
             />
           </div>
-          {typedCategories.length > 0 && <SectionNav categories={typedCategories} />}
+          <div className="flex items-center gap-3">
+            {typedCategories.length > 0 && <SectionNav categories={typedCategories} />}
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
