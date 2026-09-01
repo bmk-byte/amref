@@ -37,9 +37,18 @@ export default async function HomePage() {
     if (a.file_type?.startsWith("image/") && a.storage_path) p.push(a.storage_path);
     return p;
   });
+  // Long-lived on purpose: this page is ISR-cached (revalidate = 300) and can be
+  // served stale well beyond that under real traffic, so a short-lived signed URL
+  // baked into a stale page would expire before the page itself regenerates,
+  // breaking thumbnails until the next regeneration. A week comfortably outlives
+  // any realistic staleness window; these are previews of already-published
+  // (public) content, so the longer lifetime adds no meaningful exposure.
+  const THUMBNAIL_URL_TTL = 60 * 60 * 24 * 7;
   let signedUrlMap = new Map<string, string>();
   if (paths.length > 0) {
-    const { data: signedUrls } = await supabase.storage.from("h4gt-assets").createSignedUrls(paths, 3600);
+    const { data: signedUrls } = await supabase.storage
+      .from("h4gt-assets")
+      .createSignedUrls(paths, THUMBNAIL_URL_TTL);
     signedUrlMap = new Map(
       (signedUrls ?? [])
         .map((s): [string, string] => [s.path ?? "", s.signedUrl ?? ""])
