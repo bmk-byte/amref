@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { CATEGORIES_REQUIRING_CONSENT, type AssetStatus } from "@/lib/types";
+import type { AssetStatus } from "@/lib/types";
 
 function sanitizeFilename(name: string) {
   return name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
@@ -93,10 +93,6 @@ export async function uploadAsset(formData: FormData) {
     }
   }
 
-  const initialStatus: AssetStatus = CATEGORIES_REQUIRING_CONSENT.includes(category.slug)
-    ? "pending_consent"
-    : "draft";
-
   const { error: insertError } = await supabase.from("assets").insert({
     category_id: categoryId,
     title,
@@ -106,7 +102,7 @@ export async function uploadAsset(formData: FormData) {
     file_type: file.type || null,
     credit,
     tags,
-    status: initialStatus,
+    status: "draft" as AssetStatus,
     uploaded_by: user.id,
   });
 
@@ -182,10 +178,6 @@ export async function addVideoLink(formData: FormData) {
     .single();
   if (!category) return { error: "Unknown category." };
 
-  const initialStatus: AssetStatus = CATEGORIES_REQUIRING_CONSENT.includes(category.slug)
-    ? "pending_consent"
-    : "draft";
-
   const thumbnailPath = await cacheDriveThumbnail(supabase, sourceUrl, category.slug);
 
   const { error: insertError } = await supabase.from("assets").insert({
@@ -198,7 +190,7 @@ export async function addVideoLink(formData: FormData) {
     file_type: "video/external",
     credit,
     tags,
-    status: initialStatus,
+    status: "draft" as AssetStatus,
     uploaded_by: user.id,
   });
 
@@ -231,25 +223,6 @@ export async function updateAssetStatus(assetId: string, status: AssetStatus) {
 export async function publishAsset(assetId: string) {
   const supabase = await createClient();
 
-  const { data: asset } = await supabase
-    .from("assets")
-    .select("id, consent_id, categories(slug), consent_records(status)")
-    .eq("id", assetId)
-    .single();
-
-  if (!asset) return { error: "Asset not found." };
-
-  const categorySlug = (asset.categories as unknown as { slug: string } | null)?.slug;
-  const requiresConsent = categorySlug ? CATEGORIES_REQUIRING_CONSENT.includes(categorySlug) : false;
-  const consentStatus = (asset.consent_records as unknown as { status: string } | null)?.status;
-
-  if (requiresConsent && (!asset.consent_id || consentStatus !== "active")) {
-    return {
-      error:
-        "Cannot publish: this category requires a linked, active consent record before the asset can go public.",
-    };
-  }
-
   const { error } = await supabase.from("assets").update({ status: "published" }).eq("id", assetId);
   if (error) {
     console.error(error);
@@ -258,21 +231,6 @@ export async function publishAsset(assetId: string) {
 
   revalidatePath("/admin");
   revalidatePath("/");
-  return { success: true };
-}
-
-export async function linkConsent(assetId: string, consentId: string) {
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("assets")
-    .update({ consent_id: consentId || null })
-    .eq("id", assetId);
-  if (error) {
-    console.error(error);
-    return { error: error.message };
-  }
-
-  revalidatePath("/admin");
   return { success: true };
 }
 
@@ -289,48 +247,5 @@ export async function deleteAsset(assetId: string, storagePath: string | null) {
 
   revalidatePath("/admin");
   revalidatePath("/");
-  return { success: true };
-}
-
-export async function createConsentRecord(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Not signed in." };
-
-  const subject = (formData.get("subject") as string)?.trim();
-  const scope = (formData.get("scope") as string)?.trim() || null;
-  const dateSigned = (formData.get("date_signed") as string) || null;
-  const file = formData.get("form_file") as File | null;
-
-  if (!subject) return { error: "Subject is required." };
-
-  let consentFormPath: string | null = null;
-  if (file && file.size > 0) {
-    const path = `${Date.now()}-${sanitizeFilename(file.name)}`;
-    const { error: uploadError } = await supabase.storage
-      .from("h4gt-consent-forms")
-      .upload(path, file, { contentType: file.type || undefined });
-    if (uploadError) {
-      console.error(uploadError);
-      return { error: uploadError.message };
-    }
-    consentFormPath = path;
-  }
-
-  const { error } = await supabase.from("consent_records").insert({
-    subject,
-    scope,
-    date_signed: dateSigned,
-    consent_form_path: consentFormPath,
-    created_by: user.id,
-  });
-  if (error) {
-    console.error(error);
-    return { error: error.message };
-  }
-
-  revalidatePath("/admin/consent");
   return { success: true };
 }

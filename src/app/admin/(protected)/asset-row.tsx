@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { deleteAsset, linkConsent, updateAssetStatus } from "./actions";
-import type { Asset, AssetStatus, ConsentRecord } from "@/lib/types";
+import { deleteAsset, updateAssetStatus } from "./actions";
+import type { Asset, AssetStatus } from "@/lib/types";
 
 const STATUS_STYLES: Record<AssetStatus, string> = {
   draft: "bg-black/5 text-black/60",
@@ -14,8 +14,6 @@ const STATUS_STYLES: Record<AssetStatus, string> = {
 
 export default function AssetRow({
   asset,
-  requiresConsent,
-  consentRecords,
   publicUrl,
   selected,
   onToggleSelect,
@@ -23,8 +21,6 @@ export default function AssetRow({
   notify,
 }: {
   asset: Asset;
-  requiresConsent: boolean;
-  consentRecords: ConsentRecord[];
   publicUrl: string | null;
   selected: boolean;
   onToggleSelect: () => void;
@@ -48,17 +44,6 @@ export default function AssetRow({
         notify("error", `Failed to update "${asset.title}": ${result.error}`);
       } else {
         notify("success", `"${asset.title}" set to ${status.replace("_", " ")}.`);
-      }
-    });
-  }
-
-  function handleConsentChange(consentId: string) {
-    startTransition(async () => {
-      const result = await linkConsent(asset.id, consentId);
-      if (result?.error) {
-        notify("error", `Failed to link consent for "${asset.title}": ${result.error}`);
-      } else {
-        notify("success", `Consent updated for "${asset.title}".`);
       }
     });
   }
@@ -110,38 +95,18 @@ export default function AssetRow({
         </span>
         {error && <div className="mt-1 max-w-[220px] text-xs text-brand-orange">{error}</div>}
       </td>
-      <td className="py-3 pr-4">
-        {requiresConsent ? (
-          <select
-            defaultValue={asset.consent_id ?? ""}
-            onChange={(e) => handleConsentChange(e.target.value)}
-            className="rounded border border-black/15 px-2 py-1 text-xs"
-          >
-            <option value="">No consent linked</option>
-            {consentRecords.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.subject}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span className="text-xs text-black/40">Not required</span>
-        )}
-      </td>
       <td className="py-3">
         <div className="flex flex-wrap items-center gap-1">
-          {(["draft", "pending_consent", "cleared", "published", "rejected"] as AssetStatus[]).map(
-            (s) => (
-              <button
-                key={s}
-                disabled={isPending || asset.status === s}
-                onClick={() => handleStatusChange(s)}
-                className="rounded border border-black/15 px-2 py-1 text-xs hover:border-brand-orange hover:text-brand-orange disabled:opacity-30"
-              >
-                {s === "published" ? "Publish" : s.replace("_", " ")}
-              </button>
-            )
-          )}
+          {(["draft", "published", "rejected"] as AssetStatus[]).map((s) => (
+            <button
+              key={s}
+              disabled={isPending || asset.status === s}
+              onClick={() => handleStatusChange(s)}
+              className="rounded border border-black/15 px-2 py-1 text-xs hover:border-brand-orange hover:text-brand-orange disabled:opacity-30"
+            >
+              {s === "published" ? "Publish" : s.replace("_", " ")}
+            </button>
+          ))}
           {!confirmingDelete ? (
             <button
               disabled={isPending}

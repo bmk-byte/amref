@@ -8,17 +8,6 @@ export type Category = {
   sort_order: number;
 };
 
-export type ConsentRecord = {
-  id: string;
-  subject: string;
-  consent_form_path: string | null;
-  scope: string | null;
-  date_signed: string | null;
-  status: "active" | "revoked";
-  created_by: string | null;
-  created_at: string;
-};
-
 export type Asset = {
   id: string;
   category_id: string;
@@ -44,5 +33,3 @@ export type Profile = {
   role: StaffRole;
   created_at: string;
 };
-
-export const CATEGORIES_REQUIRING_CONSENT = ["human-interest-stories", "photos", "impact-series"];

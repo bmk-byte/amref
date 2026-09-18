@@ -136,9 +136,9 @@ export default async function HomePage() {
             Supporting Community Solutions for Sustainable Health Outcomes
           </p>
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-brand-muted">
-            Reports, abstracts, human interest stories, photos, IEC materials, and the impact series
-            from the H4GT project — preserved, credited, and shared publicly so its impact keeps
-            reaching partners, donors, researchers, and communities.
+            Reports, technical approaches, abstracts, human interest stories, photos, IEC materials,
+            videos, and more from the H4GT project — preserved, credited, and shared publicly so its
+            impact keeps reaching partners, donors, researchers, and communities.
           </p>
           {assetCount > 0 && (
             <p className="mt-6 text-sm text-brand-muted">

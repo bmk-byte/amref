@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { CATEGORIES_REQUIRING_CONSENT, type Asset, type Category, type ConsentRecord } from "@/lib/types";
+import { useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
+import type { Asset, AssetStatus, Category } from "@/lib/types";
 import AssetRow from "./asset-row";
 import UploadForm from "./upload-form";
 import VideoLinkForm from "./video-link-form";
@@ -10,19 +10,31 @@ import { ToastStack, type ToastMessage } from "./toast";
 
 type Notify = (type: "success" | "error", text: string) => void;
 
+const STATUS_FILTERS: { value: AssetStatus | "all"; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "draft", label: "Draft" },
+  { value: "pending_consent", label: "Pending consent" },
+  { value: "cleared", label: "Cleared" },
+  { value: "published", label: "Published" },
+  { value: "rejected", label: "Rejected" },
+];
+
+const ROWS_PER_PAGE = 15;
+
 export default function AdminBoard({
   categories,
   assets,
-  consentRecords,
   signedUrlMap,
 }: {
   categories: Category[];
   assets: Asset[];
-  consentRecords: ConsentRecord[];
   signedUrlMap: Record<string, string>;
 }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const toastIdRef = useRef(0);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<AssetStatus | "all">("all");
+  const deferredQuery = useDeferredValue(query);
 
   const notify = useCallback<Notify>((type, text) => {
     const id = String(toastIdRef.current++);
@@ -34,6 +46,23 @@ export default function AdminBoard({
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const filteredAssets = useMemo(() => {
+    const q = deferredQuery.trim().toLowerCase();
+    return assets.filter((a) => {
+      if (statusFilter !== "all" && a.status !== statusFilter) return false;
+      if (!q) return true;
+      return a.title.toLowerCase().includes(q) || a.tags.some((t) => t.toLowerCase().includes(q));
+    });
+  }, [assets, deferredQuery, statusFilter]);
+
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const a of filteredAssets) counts.set(a.category_id, (counts.get(a.category_id) ?? 0) + 1);
+    return counts;
+  }, [filteredAssets]);
+
+  const visibleCategories = categories.filter((c) => (categoryCounts.get(c.id) ?? 0) > 0);
+
   return (
     <div>
       <ToastStack toasts={toasts} onDismiss={dismiss} />
@@ -41,25 +70,56 @@ export default function AdminBoard({
       <UploadForm categories={categories} notify={notify} />
       <VideoLinkForm categories={categories} notify={notify} />
 
-      {categories.map((category) => {
-        const categoryAssets = assets.filter((a) => a.category_id === category.id);
-        if (categoryAssets.length === 0) return null;
-        const requiresConsent = CATEGORIES_REQUIRING_CONSENT.includes(category.slug);
-
-        return (
-          <CategorySection
-            key={category.id}
-            category={category}
-            assets={categoryAssets}
-            requiresConsent={requiresConsent}
-            consentRecords={consentRecords}
-            signedUrlMap={signedUrlMap}
-            notify={notify}
+      <div className="sticky top-0 z-10 mb-6 -mx-4 border-b border-black/10 bg-brand-gray/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search titles or tags…"
+            className="w-full max-w-sm rounded-full border border-black/15 bg-white px-4 py-1.5 text-sm outline-none focus:border-brand-orange"
           />
-        );
-      })}
+          <div className="flex flex-wrap gap-1.5">
+            {STATUS_FILTERS.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setStatusFilter(s.value)}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition-all ${
+                  statusFilter === s.value
+                    ? "border-brand-orange bg-brand-orange text-white"
+                    : "border-black/15 text-black/60 hover:border-brand-orange hover:text-brand-orange"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {visibleCategories.length > 1 && (
+          <nav className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+            {visibleCategories.map((c) => (
+              <a key={c.id} href={`#${c.slug}`} className="text-black/50 hover:text-brand-orange">
+                {c.name} <span className="text-black/30">({categoryCounts.get(c.id)})</span>
+              </a>
+            ))}
+          </nav>
+        )}
+      </div>
+
+      {visibleCategories.map((category) => (
+        <CategorySection
+          key={category.id}
+          category={category}
+          assets={filteredAssets.filter((a) => a.category_id === category.id)}
+          signedUrlMap={signedUrlMap}
+          notify={notify}
+        />
+      ))}
 
       {assets.length === 0 && <p className="text-sm text-black/50">No assets uploaded yet.</p>}
+      {assets.length > 0 && filteredAssets.length === 0 && (
+        <p className="text-sm text-black/50">No assets match your search/filter.</p>
+      )}
     </div>
   );
 }
@@ -67,24 +127,22 @@ export default function AdminBoard({
 function CategorySection({
   category,
   assets,
-  requiresConsent,
-  consentRecords,
   signedUrlMap,
   notify,
 }: {
   category: Category;
   assets: Asset[];
-  requiresConsent: boolean;
-  consentRecords: ConsentRecord[];
   signedUrlMap: Record<string, string>;
   notify: Notify;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+  const [expanded, setExpanded] = useState(false);
 
   const publishable = assets.filter((a) => a.status !== "published");
   const allSelected = publishable.length > 0 && publishable.every((a) => selected.has(a.id));
+  const visibleAssets = expanded ? assets : assets.slice(0, ROWS_PER_PAGE);
 
   function toggleAll() {
     setSelected(allSelected ? new Set() : new Set(publishable.map((a) => a.id)));
@@ -137,7 +195,7 @@ function CategorySection({
   }
 
   return (
-    <div className="mb-8">
+    <div id={category.slug} className="mb-8 scroll-mt-32">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-brand-black">
           {category.name} <span className="font-normal text-black/40">({assets.length})</span>
@@ -162,7 +220,7 @@ function CategorySection({
         </div>
       </div>
       <div className="overflow-x-auto rounded-lg border border-black/10 bg-white">
-        <table className="w-full min-w-[760px] text-sm">
+        <table className="w-full min-w-[680px] text-sm">
           <thead>
             <tr className="border-b border-black/10 text-left text-xs text-black/50">
               <th className="px-4 py-2 font-medium">
@@ -176,17 +234,14 @@ function CategorySection({
               </th>
               <th className="px-4 py-2 font-medium">Asset</th>
               <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium">Consent</th>
               <th className="px-4 py-2 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {assets.map((asset) => (
+            {visibleAssets.map((asset) => (
               <AssetRow
                 key={asset.id}
                 asset={asset}
-                requiresConsent={requiresConsent}
-                consentRecords={consentRecords}
                 publicUrl={
                   asset.storage_path ? signedUrlMap[asset.storage_path] ?? null : asset.source_url
                 }
@@ -199,6 +254,14 @@ function CategorySection({
           </tbody>
         </table>
       </div>
+      {assets.length > ROWS_PER_PAGE && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-3 rounded-full border border-black/15 px-4 py-1.5 text-xs font-medium text-black/60 transition-all hover:border-brand-orange hover:text-brand-orange"
+        >
+          {expanded ? "Show fewer" : `Show all ${assets.length}`}
+        </button>
+      )}
     </div>
   );
 }

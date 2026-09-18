@@ -1,22 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Asset, Category, ConsentRecord } from "@/lib/types";
+import type { Asset, Category } from "@/lib/types";
 import AdminBoard from "./admin-board";
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
 
-  const [{ data: categories }, { data: assets }, { data: consentRecords }] = await Promise.all([
+  const [{ data: categories }, { data: assets }] = await Promise.all([
     supabase.from("categories").select("*").order("sort_order"),
     supabase
       .from("assets")
       .select("*, categories(id, slug, name, sort_order)")
       .order("created_at", { ascending: false }),
-    supabase.from("consent_records").select("*").eq("status", "active").order("subject"),
   ]);
 
   const typedCategories = (categories ?? []) as Category[];
   const typedAssets = (assets ?? []) as Asset[];
-  const typedConsent = (consentRecords ?? []) as ConsentRecord[];
 
   const paths = typedAssets.map((a) => a.storage_path).filter((p): p is string => !!p);
   const signedUrlMap: Record<string, string> = {};
@@ -31,12 +29,7 @@ export default async function AdminDashboard() {
     <div>
       <h1 className="mb-6 text-xl font-semibold text-brand-black">Assets</h1>
 
-      <AdminBoard
-        categories={typedCategories}
-        assets={typedAssets}
-        consentRecords={typedConsent}
-        signedUrlMap={signedUrlMap}
-      />
+      <AdminBoard categories={typedCategories} assets={typedAssets} signedUrlMap={signedUrlMap} />
     </div>
   );
 }
