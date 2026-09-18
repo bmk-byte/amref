@@ -36,7 +36,13 @@ export default function UploadForm({
 
       <label className="text-sm">
         <span className="mb-1 block text-black/70">File</span>
-        <input type="file" name="file" required className="w-full text-sm" />
+        <input
+          type="file"
+          name="file"
+          required
+          accept="application/pdf,image/jpeg,image/png,image/webp,image/gif,video/mp4"
+          className="w-full text-sm"
+        />
       </label>
 
       <label className="text-sm">

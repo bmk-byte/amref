@@ -8,6 +8,9 @@ function sanitizeFilename(name: string) {
   return name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
 }
 
+// Office formats (Word/Excel/PowerPoint) are deliberately excluded: the public
+// viewer can't preview them (falls back to "Preview not available"), so the
+// house rule is PDF for every document — convert before uploading.
 const ALLOWED_FILE_TYPES = new Set([
   "application/pdf",
   "image/jpeg",
@@ -15,12 +18,6 @@ const ALLOWED_FILE_TYPES = new Set([
   "image/webp",
   "image/gif",
   "video/mp4",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.ms-powerpoint",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 ]);
 const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25MB
 
@@ -59,7 +56,9 @@ export async function uploadAsset(formData: FormData) {
   if (!title) return { error: "A title is required." };
   if (!categoryId) return { error: "A category is required." };
   if (!ALLOWED_FILE_TYPES.has(file.type)) {
-    return { error: `File type "${file.type || "unknown"}" isn't allowed. Use PDF, image, video, or office document files.` };
+    return {
+      error: `File type "${file.type || "unknown"}" isn't allowed. Convert Word/Excel/PowerPoint files to PDF first — only PDF, image, or video files can be uploaded here.`,
+    };
   }
   if (file.size > MAX_FILE_BYTES) {
     return { error: `File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is 25MB.` };
