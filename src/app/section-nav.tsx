@@ -27,13 +27,13 @@ export default function SectionNav({ categories }: { categories: Category[] }) {
   }, [categories]);
 
   return (
-    <nav className="hidden gap-1 text-sm md:flex">
+    <nav className="hidden gap-1 text-sm lg:flex">
       {categories.map((c) => (
         <a
           key={c.id}
           href={`#${c.slug}`}
           onClick={() => setActive(c.slug)}
-          className={`rounded-full px-3 py-1.5 transition-all active:scale-95 ${
+          className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 transition-all active:scale-95 ${
             active === c.slug
               ? "bg-brand-orange/10 font-medium text-brand-orange"
               : "text-brand-muted hover:text-brand-orange"
