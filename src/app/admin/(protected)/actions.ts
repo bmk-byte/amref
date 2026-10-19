@@ -205,6 +205,10 @@ export async function addVideoLink(formData: FormData) {
 
 export async function updateAssetStatus(assetId: string, status: AssetStatus) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
 
   if (status === "published") {
     return publishAsset(assetId);
@@ -222,6 +226,10 @@ export async function updateAssetStatus(assetId: string, status: AssetStatus) {
 
 export async function publishAsset(assetId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
 
   const { error } = await supabase.from("assets").update({ status: "published" }).eq("id", assetId);
   if (error) {
@@ -236,6 +244,11 @@ export async function publishAsset(assetId: string) {
 
 export async function deleteAsset(assetId: string, storagePath: string | null) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
   if (storagePath) {
     await supabase.storage.from("h4gt-assets").remove([storagePath]);
   }
