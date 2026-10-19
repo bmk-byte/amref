@@ -3,6 +3,7 @@ import { listPublishedAssets } from "@/lib/queries/assets";
 import { toPublicAssets } from "@/lib/public-assets";
 import type { Category } from "@/lib/types";
 import SiteHeader from "../../site-header";
+import SiteFooter from "../../site-footer";
 import BrowseView from "./browse-view";
 
 const PAGE_LIMIT = 24;
@@ -53,6 +54,7 @@ export default async function BrowsePage({
           initialCursor={nextCursor}
         />
       </main>
+      <SiteFooter />
     </div>
   );
 }
