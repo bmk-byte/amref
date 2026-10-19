@@ -1,6 +1,7 @@
 "use server";
 
 import { createPublicClient } from "@/lib/supabase/public";
+import { getCachedPreviewUrl } from "@/lib/signed-url-cache";
 
 // Full-resolution files are never baked into the public page's initial payload —
 // only fetched on demand when a visitor actually opens the viewer for a specific
@@ -19,13 +20,7 @@ export async function getPublishedAssetUrl(assetId: string): Promise<{ url: stri
   if (asset.source_url) return { url: asset.source_url };
   if (!asset.storage_path) return { error: "File not available." };
 
-  const { data, error } = await supabase.storage
-    .from("h4gt-assets")
-    .createSignedUrl(asset.storage_path, 300);
-
-  if (error || !data?.signedUrl) {
-    if (error) console.error(error);
-    return { error: "Could not generate a link for this file." };
-  }
-  return { url: data.signedUrl };
+  const url = await getCachedPreviewUrl(asset.storage_path);
+  if (!url) return { error: "Could not generate a link for this file." };
+  return { url };
 }

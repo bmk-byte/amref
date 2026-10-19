@@ -1,22 +1,13 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import type { Category } from "@/lib/types";
+import type { PublicAsset } from "@/lib/public-assets";
 import { getPublishedAssetUrl } from "./actions";
 
-export type PublicAsset = {
-  id: string;
-  title: string;
-  description: string | null;
-  credit: string | null;
-  tags: string[];
-  file_type: string | null;
-  category_id: string;
-  url: string | null;
-  thumbnailUrl: string | null;
-};
-
-function fileKind(fileType: string | null): "image" | "video" | "embed-video" | "pdf" | "doc" | "file" {
+export function fileKind(fileType: string | null): "image" | "video" | "embed-video" | "pdf" | "doc" | "file" {
   if (!fileType) return "file";
   if (fileType === "video/external") return "embed-video";
   if (fileType.startsWith("image/")) return "image";
@@ -42,7 +33,7 @@ function fileLabel(fileType: string | null): string {
   return (fileType?.split("/")[1] ?? "FILE").toUpperCase().slice(0, 5);
 }
 
-function SearchIcon() {
+export function SearchIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 text-brand-muted">
       <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.5" />
@@ -51,7 +42,7 @@ function SearchIcon() {
   );
 }
 
-function FileIcon() {
+export function FileIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-brand-muted/50">
       <path
@@ -64,9 +55,7 @@ function FileIcon() {
   );
 }
 
-const PAGE_SIZE = 9;
-
-function AssetCard({ asset, onOpen }: { asset: PublicAsset; onOpen: () => void }) {
+export function AssetCard({ asset, onOpen }: { asset: PublicAsset; onOpen: () => void }) {
   const kind = fileKind(asset.file_type);
   return (
     <button
@@ -77,25 +66,23 @@ function AssetCard({ asset, onOpen }: { asset: PublicAsset; onOpen: () => void }
     >
       <div className="relative flex aspect-[4/3] select-none items-center justify-center overflow-hidden bg-brand-gray">
         {kind === "image" && asset.url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={asset.url}
             alt={asset.title}
-            loading="lazy"
-            decoding="async"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             draggable={false}
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+            className="object-cover transition duration-300 group-hover:scale-105"
           />
         ) : asset.thumbnailUrl ? (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={asset.thumbnailUrl}
               alt={asset.title}
-              loading="lazy"
-              decoding="async"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               draggable={false}
-              className="h-full w-full object-cover object-top transition duration-300 group-hover:scale-105"
+              className="object-cover object-top transition duration-300 group-hover:scale-105"
             />
             {fileLabel(asset.file_type) && (
               <span className="absolute right-2 top-2 rounded bg-neutral-950/70 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-white">
@@ -138,7 +125,7 @@ function AssetCard({ asset, onOpen }: { asset: PublicAsset; onOpen: () => void }
   );
 }
 
-function AssetViewer({ asset, onClose }: { asset: PublicAsset; onClose: () => void }) {
+export function AssetViewer({ asset, onClose }: { asset: PublicAsset; onClose: () => void }) {
   const kind = fileKind(asset.file_type);
   const needsFetch = kind !== "image" && kind !== "embed-video";
 
@@ -209,13 +196,9 @@ function AssetViewer({ asset, onClose }: { asset: PublicAsset; onClose: () => vo
           )}
 
           {!loading && !fetchError && url && kind === "image" && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={url}
-              alt={asset.title}
-              draggable={false}
-              className="mx-auto max-h-[75vh] w-auto select-none"
-            />
+            <div className="relative h-[75vh] w-full select-none">
+              <Image src={url} alt={asset.title} fill draggable={false} className="object-contain" />
+            </div>
           )}
 
           {!loading && !fetchError && url && kind === "pdf" && (
@@ -284,41 +267,34 @@ function AssetViewer({ asset, onClose }: { asset: PublicAsset; onClose: () => vo
 function CategorySection({
   category,
   assets,
-  capped,
   onOpenAsset,
 }: {
   category: Category;
   assets: PublicAsset[];
-  capped: boolean;
   onOpenAsset: (asset: PublicAsset) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const shouldCap = capped && !expanded && assets.length > PAGE_SIZE;
-  const visible = shouldCap ? assets.slice(0, PAGE_SIZE) : assets;
-
   return (
-    <section id={category.slug} className="mb-14 scroll-mt-36">
+    <section className="mb-14 scroll-mt-36">
       <div className="mb-5 flex items-baseline justify-between border-b border-brand-line pb-3">
         <h2 className="font-display text-xl font-semibold text-brand-black">{category.name}</h2>
-        <span className="text-xs text-brand-muted">{assets.length}</span>
+        <Link href={`/browse/${category.slug}`} className="text-xs font-medium text-brand-orange hover:underline">
+          View all →
+        </Link>
       </div>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {visible.map((asset) => (
+        {assets.map((asset) => (
           <AssetCard key={asset.id} asset={asset} onOpen={() => onOpenAsset(asset)} />
         ))}
       </div>
-      {capped && assets.length > PAGE_SIZE && (
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          className="mt-5 rounded-full border border-brand-line px-4 py-1.5 text-xs font-medium text-brand-muted transition-all hover:border-brand-orange hover:text-brand-orange active:scale-95"
-        >
-          {expanded ? "Show fewer" : `Show all ${assets.length}`}
-        </button>
-      )}
     </section>
   );
 }
 
+// Curated homepage view only: a bounded preview per category, each linking
+// through to a full server-paginated/searchable view at /browse — not a
+// client-side filterable grid itself. Search and category selection submit
+// as real navigations into /browse instead of filtering in place, since the
+// full dataset no longer lives in the browser (see /browse/[[...category]]).
 export default function PublicBrowser({
   categories,
   assets,
@@ -326,79 +302,45 @@ export default function PublicBrowser({
   categories: Category[];
   assets: PublicAsset[];
 }) {
-  const [query, setQuery] = useState("");
-  const deferredQuery = useDeferredValue(query);
-  const [activeCategory, setActiveCategory] = useState<string | "all">("all");
   const [openAsset, setOpenAsset] = useState<PublicAsset | null>(null);
-
-  const filtered = useMemo(() => {
-    const q = deferredQuery.trim().toLowerCase();
-    return assets.filter((a) => {
-      if (activeCategory !== "all" && a.category_id !== activeCategory) return false;
-      if (!q) return true;
-      return (
-        a.title.toLowerCase().includes(q) ||
-        (a.description ?? "").toLowerCase().includes(q) ||
-        a.tags.some((t) => t.toLowerCase().includes(q))
-      );
-    });
-  }, [assets, deferredQuery, activeCategory]);
 
   return (
     <div>
       <div className="sticky top-16 z-10 -mx-4 mb-10 border-b border-brand-line bg-background/90 px-4 py-4 backdrop-blur-md sm:-mx-6 sm:px-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative w-full max-w-sm">
+          <form action="/browse" className="relative w-full max-w-sm">
             <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
               <SearchIcon />
             </span>
             <input
               type="search"
+              name="q"
               placeholder="Search titles, descriptions, tags…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
               className="w-full rounded-full border border-brand-line bg-white py-2 pl-9 pr-4 text-sm outline-none transition focus:border-brand-orange"
             />
-          </div>
+          </form>
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setActiveCategory("all")}
-              aria-pressed={activeCategory === "all"}
-              className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-90 ${
-                activeCategory === "all"
-                  ? "border-brand-orange bg-brand-orange text-white shadow-sm shadow-brand-orange/30"
-                  : "border-brand-line text-brand-muted hover:border-brand-orange hover:text-brand-orange"
-              }`}
+            <Link
+              href="/browse"
+              className="rounded-full border border-brand-line px-3.5 py-1.5 text-xs font-medium text-brand-muted transition-all duration-150 hover:border-brand-orange hover:text-brand-orange active:scale-90"
             >
-              All
-            </button>
+              Browse all
+            </Link>
             {categories.map((c) => (
-              <button
+              <Link
                 key={c.id}
-                onClick={() => setActiveCategory(c.id)}
-                aria-pressed={activeCategory === c.id}
-                className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-90 ${
-                  activeCategory === c.id
-                    ? "border-brand-orange bg-brand-orange text-white shadow-sm shadow-brand-orange/30"
-                    : "border-brand-line text-brand-muted hover:border-brand-orange hover:text-brand-orange"
-                }`}
+                href={`/browse/${c.slug}`}
+                className="rounded-full border border-brand-line px-3.5 py-1.5 text-xs font-medium text-brand-muted transition-all duration-150 hover:border-brand-orange hover:text-brand-orange active:scale-90"
               >
                 {c.name}
-              </button>
+              </Link>
             ))}
           </div>
         </div>
-        <p className="mt-3 text-xs text-brand-muted" aria-live="polite">
-          Showing {filtered.length} of {assets.length} item{assets.length === 1 ? "" : "s"}
-          {activeCategory !== "all"
-            ? ` in ${categories.find((c) => c.id === activeCategory)?.name ?? ""}`
-            : ""}
-          {query ? ` matching “${query}”` : ""}
-        </p>
       </div>
 
       {categories.map((category) => {
-        const categoryAssets = filtered.filter((a) => a.category_id === category.id);
+        const categoryAssets = assets.filter((a) => a.category_id === category.id);
         if (categoryAssets.length === 0) return null;
 
         return (
@@ -406,16 +348,15 @@ export default function PublicBrowser({
             key={category.id}
             category={category}
             assets={categoryAssets}
-            capped={!query}
             onOpenAsset={setOpenAsset}
           />
         );
       })}
 
-      {filtered.length === 0 && (
+      {assets.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-20 text-center">
           <FileIcon />
-          <p className="text-sm text-brand-muted">No materials match your search.</p>
+          <p className="text-sm text-brand-muted">No materials published yet.</p>
         </div>
       )}
 

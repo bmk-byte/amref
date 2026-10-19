@@ -1,47 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { Category } from "@/lib/types";
 
 export default function SectionNav({ categories }: { categories: Category[] }) {
-  const [active, setActive] = useState<string | null>(null);
-
-  useEffect(() => {
-    const sections = categories
-      .map((c) => document.getElementById(c.slug))
-      .filter((el): el is HTMLElement => !!el);
-
-    if (sections.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) setActive(entry.target.id);
-        });
-      },
-      { rootMargin: "-140px 0px -70% 0px", threshold: 0 }
-    );
-
-    sections.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, [categories]);
+  const pathname = usePathname();
 
   return (
     <nav className="flex flex-wrap gap-1.5 text-sm">
-      {categories.map((c) => (
-        <a
-          key={c.id}
-          href={`#${c.slug}`}
-          onClick={() => setActive(c.slug)}
-          className={`rounded-full px-3 py-1.5 transition-all active:scale-95 ${
-            active === c.slug
-              ? "bg-brand-orange/10 font-medium text-brand-orange"
-              : "text-brand-muted hover:text-brand-orange"
-          }`}
-        >
-          {c.name}
-        </a>
-      ))}
+      {categories.map((c) => {
+        const active = pathname === `/browse/${c.slug}`;
+        return (
+          <Link
+            key={c.id}
+            href={`/browse/${c.slug}`}
+            className={`rounded-full px-3 py-1.5 transition-all active:scale-95 ${
+              active
+                ? "bg-brand-orange/10 font-medium text-brand-orange"
+                : "text-brand-muted hover:text-brand-orange"
+            }`}
+          >
+            {c.name}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

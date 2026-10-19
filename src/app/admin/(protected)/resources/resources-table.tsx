@@ -1,15 +1,16 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Asset, AssetStatus, Category } from "@/lib/types";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import ResourceRow from "./resource-row";
 import Pagination from "../pagination";
 import { publishAsset } from "../actions";
 import { ToastStack, type ToastMessage } from "../toast";
 
-const PAGE_SIZE = 20;
+type SortOption = "newest" | "oldest" | "title";
 
 const STATUS_OPTIONS: { value: AssetStatus; label: string }[] = [
   { value: "draft", label: "Draft" },
@@ -23,12 +24,26 @@ export default function ResourcesTable({
   categories,
   assets,
   signedUrlMap,
+  totalCount,
+  page,
+  pageSize,
+  initialQuery,
+  initialCategory,
+  initialStatus,
+  initialSort,
 }: {
   categories: Category[];
   assets: Asset[];
   signedUrlMap: Record<string, string>;
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  initialQuery: string;
+  initialCategory: string;
+  initialStatus: AssetStatus | "all";
+  initialSort: SortOption;
 }) {
-  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const toastIdRef = useRef(0);
@@ -41,63 +56,53 @@ export default function ResourcesTable({
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
-  const [categoryFilter, setCategoryFilter] = useState(() => searchParams.get("category") ?? "all");
-  const [statusFilter, setStatusFilter] = useState(() => searchParams.get("status") ?? "all");
-  const [sort, setSort] = useState(() => searchParams.get("sort") ?? "newest");
-  const [page, setPage] = useState(() => Math.max(1, Number(searchParams.get("page") ?? "1") || 1));
-  const deferredQuery = useDeferredValue(query);
+  const [query, setQuery] = useState(initialQuery);
+  const [categoryFilter, setCategoryFilter] = useState(initialCategory);
+  const [statusFilter, setStatusFilter] = useState<AssetStatus | "all">(initialStatus);
+  const [sort, setSort] = useState<SortOption>(initialSort);
+  const debouncedQuery = useDebouncedValue(query, 350);
 
-  // Reflect filter state in the address bar via the History API directly —
-  // not next/navigation's router, which would trigger a server round-trip
-  // (an RSC refetch) on every keystroke. This keeps filtering instant while
-  // still making the URL shareable/bookmarkable.
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (query) params.set("q", query);
-    if (categoryFilter !== "all") params.set("category", categoryFilter);
-    if (statusFilter !== "all") params.set("status", statusFilter);
-    if (sort !== "newest") params.set("sort", sort);
-    if (page !== 1) params.set("page", String(page));
-    const qs = params.toString();
-    window.history.replaceState(null, "", qs ? `/admin/resources?${qs}` : "/admin/resources");
-  }, [query, categoryFilter, statusFilter, sort, page]);
+  const navigate = useCallback(
+    (next: { q: string; category: string; status: AssetStatus | "all"; sort: SortOption; page: number }) => {
+      const params = new URLSearchParams();
+      if (next.q) params.set("q", next.q);
+      if (next.category !== "all") params.set("category", next.category);
+      if (next.status !== "all") params.set("status", next.status);
+      if (next.sort !== "newest") params.set("sort", next.sort);
+      if (next.page !== 1) params.set("page", String(next.page));
+      const qs = params.toString();
+      router.replace(qs ? `/admin/resources?${qs}` : "/admin/resources");
+    },
+    [router]
+  );
 
+  // Filtering is server-side now, so a navigation here is the only way to
+  // get the next matching set — unlike the old history.replaceState-only
+  // approach, which deliberately avoided a router refetch back when
+  // everything was already in memory client-side. The search text is
+  // debounced; category/status/sort fire immediately since a <select>
+  // change is a discrete action, not a keystroke stream.
   const didMount = useRef(false);
   useEffect(() => {
     if (!didMount.current) {
       didMount.current = true;
       return;
     }
-    setPage(1);
-  }, [deferredQuery, categoryFilter, statusFilter, sort]);
+    navigate({ q: debouncedQuery, category: categoryFilter, status: statusFilter, sort, page: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQuery, categoryFilter, statusFilter, sort]);
+
+  function handlePageChange(nextPage: number) {
+    navigate({ q: debouncedQuery, category: categoryFilter, status: statusFilter, sort, page: nextPage });
+  }
 
   const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
-
-  const filtered = useMemo(() => {
-    const q = deferredQuery.trim().toLowerCase();
-    const list = assets.filter((a) => {
-      if (categoryFilter !== "all" && categoryMap.get(a.category_id)?.slug !== categoryFilter) return false;
-      if (statusFilter !== "all" && a.status !== statusFilter) return false;
-      if (!q) return true;
-      return a.title.toLowerCase().includes(q) || a.tags.some((t) => t.toLowerCase().includes(q));
-    });
-    return [...list].sort((a, b) => {
-      if (sort === "title") return a.title.localeCompare(b.title);
-      if (sort === "oldest") return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
-      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-    });
-  }, [assets, deferredQuery, categoryFilter, statusFilter, sort, categoryMap]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
 
-  const publishable = pageItems.filter((a) => a.status !== "published");
+  const publishable = assets.filter((a) => a.status !== "published");
   const allSelected = publishable.length > 0 && publishable.every((a) => selected.has(a.id));
 
   function toggleAll() {
@@ -146,10 +151,10 @@ export default function ResourcesTable({
     setCategoryFilter("all");
     setStatusFilter("all");
     setSort("newest");
-    setPage(1);
   }
 
   const hasFilters = query !== "" || categoryFilter !== "all" || statusFilter !== "all" || sort !== "newest";
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
     <div>
@@ -193,7 +198,7 @@ export default function ResourcesTable({
         </select>
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => setStatusFilter(e.target.value as AssetStatus | "all")}
           className="rounded border border-black/15 px-2 py-1.5 text-sm"
           aria-label="Filter by status"
         >
@@ -206,7 +211,7 @@ export default function ResourcesTable({
         </select>
         <select
           value={sort}
-          onChange={(e) => setSort(e.target.value)}
+          onChange={(e) => setSort(e.target.value as SortOption)}
           className="rounded border border-black/15 px-2 py-1.5 text-sm"
           aria-label="Sort order"
         >
@@ -223,7 +228,7 @@ export default function ResourcesTable({
 
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="text-xs text-black/50">
-          {filtered.length} result{filtered.length === 1 ? "" : "s"}
+          {totalCount} result{totalCount === 1 ? "" : "s"}
         </span>
         <div className="flex items-center gap-3">
           {selected.size > 0 && !bulkProgress && (
@@ -266,7 +271,7 @@ export default function ResourcesTable({
             </tr>
           </thead>
           <tbody>
-            {pageItems.map((asset) => (
+            {assets.map((asset) => (
               <ResourceRow
                 key={asset.id}
                 asset={asset}
@@ -280,17 +285,17 @@ export default function ResourcesTable({
             ))}
           </tbody>
         </table>
-        {pageItems.length === 0 && (
+        {assets.length === 0 && (
           <p className="p-8 text-center text-sm text-black/40">No resources match your filters.</p>
         )}
       </div>
 
       <Pagination
-        page={safePage}
+        page={page}
         totalPages={totalPages}
-        onPageChange={setPage}
-        totalItems={filtered.length}
-        pageSize={PAGE_SIZE}
+        onPageChange={handlePageChange}
+        totalItems={totalCount}
+        pageSize={pageSize}
       />
     </div>
   );

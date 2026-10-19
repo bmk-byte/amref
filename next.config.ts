@@ -14,6 +14,12 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "*.supabase.co" },
+      { protocol: "https", hostname: "drive.google.com" },
+    ],
+  },
   async headers() {
     return [
       {

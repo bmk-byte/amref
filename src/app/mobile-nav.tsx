@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { Category } from "@/lib/types";
 
 export default function MobileNav({ categories }: { categories: Category[] }) {
@@ -44,14 +45,14 @@ export default function MobileNav({ categories }: { categories: Category[] }) {
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} aria-hidden="true" />
           <nav className="absolute right-0 top-full z-40 mt-2 w-60 max-w-[calc(100vw-2rem)] rounded-xl border border-brand-line bg-white p-2 shadow-[0_16px_40px_-16px_rgba(24,20,15,0.35)]">
             {categories.map((c) => (
-              <a
+              <Link
                 key={c.id}
-                href={`#${c.slug}`}
+                href={`/browse/${c.slug}`}
                 onClick={() => setOpen(false)}
                 className="block rounded-lg px-3 py-2 text-sm text-brand-black transition hover:bg-brand-gray hover:text-brand-orange"
               >
                 {c.name}
-              </a>
+              </Link>
             ))}
           </nav>
         </>

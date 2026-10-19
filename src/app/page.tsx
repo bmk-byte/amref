@@ -1,10 +1,9 @@
-import Image from "next/image";
 import { createPublicClient } from "@/lib/supabase/public";
+import { listHomepagePreviews } from "@/lib/queries/assets";
+import { toPublicAssets } from "@/lib/public-assets";
 import type { Asset, Category } from "@/lib/types";
-import PublicBrowser, { type PublicAsset } from "./public-browser";
-import SectionNav from "./section-nav";
-import MobileNav from "./mobile-nav";
-import ThemeToggle from "./theme-toggle";
+import PublicBrowser from "./public-browser";
+import SiteHeader from "./site-header";
 
 // Time-based safety net only — actions.ts already calls revalidatePath("/")
 // on publish/unpublish/delete, so real changes show up immediately via
@@ -12,128 +11,28 @@ import ThemeToggle from "./theme-toggle";
 // otherwise, while letting Next/Vercel actually cache the rendered page.
 export const revalidate = 300;
 
+// Bounded preview per category, not the full table — at scale this keeps the
+// homepage's cost constant regardless of total published-asset count. Full
+// per-category/search results live at /browse.
+const PREVIEW_LIMIT = 9;
+
 export default async function HomePage() {
   const supabase = createPublicClient();
 
-  const [{ data: categories }, { data: assets }] = await Promise.all([
-    supabase.from("categories").select("*").order("sort_order"),
-    supabase
-      .from("assets")
-      .select("*")
-      .eq("status", "published")
-      .order("created_at", { ascending: false }),
+  const { data: categories } = await supabase.from("categories").select("*").order("sort_order");
+  const typedCategories = (categories ?? []) as Category[];
+
+  const [previewsByCategory, { count: assetCount }] = await Promise.all([
+    listHomepagePreviews(supabase, typedCategories, PREVIEW_LIMIT),
+    supabase.from("assets").select("*", { count: "estimated", head: true }).eq("status", "published"),
   ]);
 
-  const typedCategories = (categories ?? []) as Category[];
-  const typedAssets = (assets ?? []) as Asset[];
-
-  // Only pre-sign what the grid actually needs to render previews: thumbnails,
-  // and the file itself for images (there's no separate image-thumbnail pipeline
-  // yet). PDFs/videos/docs are NOT pre-signed here — their full file URL is only
-  // fetched on demand (getPublishedAssetUrl) when a visitor opens the viewer for
-  // that specific item, so a single page load can't be used to bulk-harvest every
-  // published file's URL at once.
-  const paths = typedAssets.flatMap((a) => {
-    const p: string[] = [];
-    if (a.thumbnail_path) p.push(a.thumbnail_path);
-    if (a.file_type?.startsWith("image/") && a.storage_path) p.push(a.storage_path);
-    return p;
-  });
-  // Long-lived on purpose: this page is ISR-cached (revalidate = 300) and can be
-  // served stale well beyond that under real traffic, so a short-lived signed URL
-  // baked into a stale page would expire before the page itself regenerates,
-  // breaking thumbnails until the next regeneration. A week comfortably outlives
-  // any realistic staleness window; these are previews of already-published
-  // (public) content, so the longer lifetime adds no meaningful exposure.
-  const THUMBNAIL_URL_TTL = 60 * 60 * 24 * 7;
-  let signedUrlMap = new Map<string, string>();
-  if (paths.length > 0) {
-    const { data: signedUrls } = await supabase.storage
-      .from("h4gt-assets")
-      .createSignedUrls(paths, THUMBNAIL_URL_TTL);
-    signedUrlMap = new Map(
-      (signedUrls ?? [])
-        .map((s): [string, string] => [s.path ?? "", s.signedUrl ?? ""])
-        .filter(([p]) => p)
-    );
-  }
-
-  // Videos live on Google Drive, not in Supabase Storage: no signing needed,
-  // just an embeddable thumbnail derived straight from the share link's file id.
-  function driveThumbnail(url: string | null): string | null {
-    if (!url) return null;
-    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    return match ? `https://drive.google.com/thumbnail?id=${match[1]}&sz=w600` : null;
-  }
-
-  const publicAssets: PublicAsset[] = typedAssets.map((a) => {
-    const isImage = a.file_type?.startsWith("image/");
-    const isEmbedVideo = a.file_type === "video/external";
-    return {
-      id: a.id,
-      title: a.title,
-      description: a.description,
-      credit: a.credit,
-      tags: a.tags,
-      file_type: a.file_type,
-      category_id: a.category_id,
-      url: isImage
-        ? (a.storage_path && signedUrlMap.get(a.storage_path)) || null
-        : isEmbedVideo
-          ? a.source_url
-          : null,
-      thumbnailUrl: a.thumbnail_path
-        ? signedUrlMap.get(a.thumbnail_path) ?? null
-        : isEmbedVideo
-          ? driveThumbnail(a.source_url)
-          : null,
-    };
-  });
-
-  const assetCount = publicAssets.length;
+  const typedAssets: Asset[] = Array.from(previewsByCategory.values()).flat();
+  const publicAssets = await toPublicAssets(supabase, typedAssets);
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-20 border-b border-brand-line bg-background/85 backdrop-blur-md">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="flex items-center justify-between gap-3 py-4">
-            <div className="flex shrink-0 items-center gap-3">
-              <Image
-                src="/heroes-logo.png"
-                alt="Heroes for Gender Transformative Action"
-                width={660}
-                height={640}
-                priority
-                className="h-9 w-auto shrink-0"
-              />
-              <span className="hidden whitespace-nowrap text-sm font-semibold text-brand-black sm:inline">
-                H4GT Resource Library
-              </span>
-              <span className="hidden h-6 w-px shrink-0 bg-brand-line lg:inline-block" aria-hidden="true" />
-              <img
-                src="https://i0.wp.com/amref.org/uganda/wp-content/uploads/sites/4/2020/03/white.png?fit=1460%2C862&ssl=1"
-                alt="Amref Health Africa"
-                width={1460}
-                height={862}
-                className="hidden h-5 w-auto shrink-0 aspect-[1460/862] opacity-80 lg:block"
-              />
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <ThemeToggle />
-              {typedCategories.length > 0 && <MobileNav categories={typedCategories} />}
-            </div>
-          </div>
-          {/* Full-width row so every category name is always visible — nine names
-              don't fit on one line within the header's own max-width at any
-              viewport size, so this wraps onto a second line instead of hiding
-              anything behind a scroll a visitor would have no reason to find. */}
-          {typedCategories.length > 0 && (
-            <div className="hidden pb-3 lg:block">
-              <SectionNav categories={typedCategories} />
-            </div>
-          )}
-        </div>
-      </header>
+      <SiteHeader categories={typedCategories} />
 
       <section className="border-b border-brand-line bg-gradient-to-b from-brand-gray/70 to-background">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20">
@@ -152,7 +51,7 @@ export default async function HomePage() {
             videos, and more from the H4GT project — preserved, credited, and shared publicly so its
             impact keeps reaching partners, donors, researchers, and communities.
           </p>
-          {assetCount > 0 && (
+          {assetCount !== null && assetCount > 0 && (
             <p className="mt-6 text-sm text-brand-muted">
               <span className="font-semibold text-brand-black">{assetCount}</span> published item
               {assetCount === 1 ? "" : "s"} across {typedCategories.length} sections
